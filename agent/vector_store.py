@@ -1,19 +1,19 @@
+from sentence_transformers import SentenceTransformer
 import faiss
-from .hf_llm import HFEmbeddings
+import numpy as np
 
-def create_vector_store(texts=None):
-    texts = texts or ["dummy initialization text"]
-    embeddings_model = HFEmbeddings()
-    vectors = embeddings_model.embed_documents(texts)
-    
-    dim = vectors.shape[1]
-    index = faiss.IndexFlatL2(dim)
-    index.add(vectors)
-    
-    store = {"index": index, "texts": texts, "embeddings_model": embeddings_model}
-    return store
+class VectorStore:
+    def __init__(self):
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.index = faiss.IndexFlatL2(384)
+        self.docs = []
 
-def add_to_store(store, texts):
-    vectors = store['embeddings_model'].embed_documents(texts)
-    store['index'].add(vectors)
-    store['texts'].extend(texts)
+    def add_documents(self, documents):
+        embeddings = self.model.encode(documents)
+        self.index.add(embeddings)
+        self.docs.extend(documents)
+
+    def search(self, query, k=3):
+        q_embed = self.model.encode([query])
+        distances, indices = self.index.search(q_embed, k)
+        return [self.docs[idx] for idx in indices[0] if idx < len(self.docs)]

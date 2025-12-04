@@ -1,19 +1,20 @@
-import os
 from .tools import web_search
 from .summarizer import SummarizerAgent
-from sentence_transformers import SentenceTransformer
+from .vector_store import VectorStore
 
 class ResearchAgent:
     def __init__(self):
         self.summarizer = SummarizerAgent()
-        self.embedder = SentenceTransformer("all-MiniLM-L6-v2")  # lightweight embedding model
+        self.vector_store = VectorStore()
 
     def query(self, question):
-        # Step 1: Get web search results
-        results = web_search(question)
-        if not results:
-            return "No relevant search results found."
+        search_results = web_search(question)
 
-        # Step 2: Summarize the results
-        summary = self.summarizer.summarize(results)
-        return summary
+        docs = [r["content"] for r in search_results if r["content"]]
+        if docs:
+            self.vector_store.add_documents(docs)
+
+        context = "\n\n".join(self.vector_store.search(question))
+
+        final_text = question + "\n\n" + context
+        return self.summarizer.summarize(final_text)

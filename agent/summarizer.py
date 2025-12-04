@@ -1,10 +1,12 @@
 from transformers import pipeline
-import os
 
 class SummarizerAgent:
     def __init__(self):
-        self.summarizer = pipeline("summarization")
+        self.summarizer = pipeline(
+            "summarization",
+            model="sshleifer/distilbart-cnn-12-6"
+        )
 
-    def summarize(self, text, max_length=150):
-        summary = self.summarizer(text, max_length=max_length, min_length=30, do_sample=False)
-        return summary[0]['summary_text']
+    def summarize(self, text):
+        summary = self.summarizer(text, max_length=120, min_length=40, do_sample=False)
+        return summary[0]["summary_text"]
